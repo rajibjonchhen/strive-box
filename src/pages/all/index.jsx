@@ -10,34 +10,60 @@ export default class All extends Component {
       loading: true,
       files: [],
       file: null,
+      title:'',
+      seeImg:null
     };
     this.ref = createRef();
   }
   componentDidMount() {
     this.fetchFiles();
   }
+
   fetchFiles = async () => {
-    const { data } = await backend.get("/files");
-    this.setState({ files: data, loading: false });
+    try {
+      let response = await fetch('http://localhost:3001/posts',{
+        method:'GET'
+      })
+      if(response.ok){
+        let data = await response.json()
+        this.setState({ files: data, loading: false });
+        console.log(data)
+      }
+    } catch (error) {
+      console.error(error)
+    }
+   
   };
-  handleFileClick = () => {
+
+  handleFileClick = (e) => {
     this.ref.current.click();
+    this.setState({file:e.target.files[0]})
   };
+
   handleFileChange = async (e) => {
     const [file, ...rest] = e.target.files;
+    console.log(this.state.files[0])
     const formData = new FormData();
-    formData.append("cover", file);
+    formData.append("image", file);
     try {
-      await backend.post("/files", formData);
-      this.fetchFiles();
+      // await backend.post("/files", formData);
+     let response = await fetch('http://localhost:3001/posts',{
+        method:"POST",
+        body:formData,
+      });
     } catch (error) {
       console.log(error);
     }
   };
+
   handleFileDelete = async (id) => {
     try {
       await backend.delete(`/files/${id}`);
-      this.fetchFiles();
+      // this.fetchFiles();
+      let response = await fetch('http://localhost:3001/posts/' + id, {
+        method:'DELETE',
+        }
+      )
     } catch (error) {
       console.log(error);
     }
@@ -45,10 +71,23 @@ export default class All extends Component {
   changeTitle = (e) => {
     this.setState({ title: e.target.value });
   };
+
   renameFile = async (id) => {
     try {
-      await backend.put(`/files/${id}`, { title: this.state.title });
-      this.fetchFiles();
+      // await backend.put(`/files/${id}`, { title: this.state.title });
+      // this.fetchFiles();
+      let response = await fetch('http://localhost:3001/posts/' + id, {
+        method:'PUT',
+        body: JSON.stringify({title: this.state.title}),
+        header:{
+          "Content-Type": "application/JSON",
+        }
+      })
+      if(response.ok){
+        let data = await response.json()
+        console.log(data)
+        console.log(JSON.stringify({ title: this.state.title }))
+      }
     } catch (error) {
       console.log(error);
     }
@@ -100,12 +139,17 @@ export default class All extends Component {
                           }
                         }}
                       />
+                       <div className="bg-dark p-3 w-100 h-100 " style={{display:this.state.seeImg===file.id? 'block':'none',position:'fixed',zIndex:'1', top:'0', left:'0'}}>
+                        <div onClick={(e)=>this.setState({seeImg:false})}><button className='p-1 px-2 my-2 rounded-lg bg-dark text-white'>Close</button></div>
+                        <img src={file.link} className='mx-auto my-auto' style={{width:'1000px',}}/>
+                      </div>
                     </td>
                     <td>{file.size}</td>
                     <td>
-                      <Button as="a" href={file.url} variant="dark">
+                      <Button as="a" onClick={(e)=> this.setState({seeImg:file.id})} variant="dark">
                         See
                       </Button>
+                     
                       <Button
                         as="a"
                         href={file.downloadUrl}

@@ -4,6 +4,9 @@ import Recents from "pages/recents";
 import Starred from "pages/starred";
 import { BrowserRouter as Router, Route } from "react-router-dom";
 function App() {
+
+    
+  
   return (
     <Router>
       <Route
